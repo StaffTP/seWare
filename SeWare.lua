@@ -35,6 +35,7 @@ local RainbowChams = false
 local ShowPlayerNames = true
 local SilentAimEnabled = false
 local GUIEnabled = false
+local PingDisplay = nil
 
 local SelectedKey = getgenv().Key:lower()
 local SelectedDisableKey = getgenv().DisableKey:lower()
@@ -169,7 +170,7 @@ ScreenGui.Parent = game.CoreGui
 
 local Frame = Instance.new("Frame")
 Frame.Position = UDim2.new(0.5, -100, 0.5, -75)  -- Smaller and more compact
-Frame.Size = UDim2.new(0, 200, 0, 225)  -- Adjusted size
+Frame.Size = UDim2.new(0, 200, 0, 250)  -- Adjusted size
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Darker background
 Frame.BackgroundTransparency = 0.3  -- Slightly less transparent
 Frame.BorderSizePixel = 0
@@ -187,6 +188,17 @@ Footer.TextColor3 = getRainbowColor()
 Footer.TextScaled = true
 Footer.Font = Enum.Font.GothamBold
 Footer.Parent = Frame
+
+-- Real-Time Ping Display
+PingDisplay = Instance.new("TextLabel")
+PingDisplay.Size = UDim2.new(1, 0, 0.1, 0)
+PingDisplay.Position = UDim2.new(0, 0, 0.8, 0)
+PingDisplay.Text = "Ping: 0 ms"
+PingDisplay.BackgroundTransparency = 1
+PingDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+PingDisplay.TextScaled = true
+PingDisplay.Font = Enum.Font.Gotham
+PingDisplay.Parent = Frame
 
 local Checkboxes = {}
 
@@ -347,7 +359,7 @@ local function getClosestPlayer()
 
             if notKO and notGrabbed and aimPart and distance <= getgenv().MaxDistance and isVisible(aimPart) then
                 local pos = Camera:WorldToViewportPoint(character.PrimaryPart.Position)
-                local distanceToCursor = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).magnitude
+                local distanceToCursor = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
 
                 if (getgenv().FOV and fov.Radius > distanceToCursor and distanceToCursor < shortestDistance) or (not getgenv().FOV and distanceToCursor < shortestDistance) then
                     closestPlayer = v
@@ -413,6 +425,16 @@ local function silentAim()
     end
 end
 
+-- Auto-Target Switching
+local function switchTarget()
+    if not Victim or getDistanceFromPlayer(Victim.Character) > getgenv().MaxDistance or not isVisible(Victim.Character[getgenv().AimPart]) then
+        Victim = getClosestPlayer()
+        if Victim then
+            Notify("Switched target to: " .. Victim.Character.Humanoid.DisplayName)
+        end
+    end
+end
+
 --// Key Down Event Handler
 UIS.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -451,12 +473,15 @@ end)
 --// Render Stepped Event Handler
 RS.RenderStepped:Connect(function()
     updateFOV()
-    if AimlockState and Locked and Victim and Victim.Character and Victim.Character:FindFirstChild(getgenv().AimPart) then
-        if getDistanceFromPlayer(Victim.Character) <= getgenv().MaxDistance then
-            aimAt(Victim)
-        else
-            Victim = nil
-            Notify("Target moved out of range, unlocking!")
+    if AimlockState and Locked then
+        switchTarget()
+        if Victim and Victim.Character and Victim.Character:FindFirstChild(getgenv().AimPart) then
+            if getDistanceFromPlayer(Victim.Character) <= getgenv().MaxDistance then
+                aimAt(Victim)
+            else
+                Victim = nil
+                Notify("Target moved out of range, unlocking!")
+            end
         end
     end
     -- Update Footer Color
@@ -466,6 +491,9 @@ RS.RenderStepped:Connect(function()
     if SilentAimEnabled then
         silentAim()
     end
+
+    -- Update Ping Display
+    PingDisplay.Text = "Ping: " .. tostring(getPing()) .. " ms"
 end)
 
 --// Auto Prediction
