@@ -18,6 +18,7 @@ local GS = game:GetService("GuiService")
 local SG = game:GetService("StarterGui")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Stats = game:GetService("Stats")
 
 --// Variables (Regular)
 local LP = Players.LocalPlayer
@@ -168,7 +169,7 @@ ScreenGui.Parent = game.CoreGui
 
 local Frame = Instance.new("Frame")
 Frame.Position = UDim2.new(0.5, -100, 0.5, -75)  -- Smaller and more compact
-Frame.Size = UDim2.new(0, 200, 0, 200)  -- Adjusted size to accommodate Silent Aim toggle
+Frame.Size = UDim2.new(0, 200, 0, 225)  -- Adjusted size
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Darker background
 Frame.BackgroundTransparency = 0.3  -- Slightly less transparent
 Frame.BorderSizePixel = 0
@@ -322,6 +323,15 @@ local function getDistanceFromPlayer(character)
     return (LP.Character.HumanoidRootPart.Position - character.HumanoidRootPart.Position).Magnitude
 end
 
+local function isVisible(targetPart)
+    local origin = Camera.CFrame.Position
+    local direction = (targetPart.Position - origin).Unit * 1000
+    local ray = Ray.new(origin, direction)
+    local hitPart = workspace:FindPartOnRayWithIgnoreList(ray, {LP.Character, Camera})
+
+    return hitPart and hitPart:IsDescendantOf(targetPart.Parent)
+end
+
 local function getClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -335,7 +345,7 @@ local function getClosestPlayer()
             local aimPart = character:FindFirstChild(getgenv().AimPart)
             local distance = getDistanceFromPlayer(character)
 
-            if notKO and notGrabbed and aimPart and distance <= getgenv().MaxDistance then
+            if notKO and notGrabbed and aimPart and distance <= getgenv().MaxDistance and isVisible(aimPart) then
                 local pos = Camera:WorldToViewportPoint(character.PrimaryPart.Position)
                 local distanceToCursor = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
 
@@ -349,7 +359,7 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
---// Enhanced Aimlock with Improved Prediction
+--// Enhanced Aimlock with Improved Prediction and Smoothing
 local function aimAt(target)
     if not target or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then return end
 
@@ -363,8 +373,10 @@ local function aimAt(target)
     local travelTime = (targetPosition - Camera.CFrame.Position).Magnitude / 1000 -- Adjust this value to your game projectile speed
     local predictedPosition = targetPosition + (targetVelocity * travelTime)
 
-    -- Aim at the predicted position
-    Camera.CFrame = CFrame.new(Camera.CFrame.Position, predictedPosition)
+    -- Aim at the predicted position with smoothing
+    local currentCFrame = Camera.CFrame
+    local targetCFrame = CFrame.new(currentCFrame.Position, predictedPosition)
+    Camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.2)  -- Adjust the 0.2 value for smoothing speed
 end
 
 --// Silent Aim Function
@@ -457,53 +469,61 @@ RS.RenderStepped:Connect(function()
 end)
 
 --// Auto Prediction
-while wait() do
-    if getgenv().AutoPrediction then
-        local ping = tonumber(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString():match("(%d+)"))
-        if ping then
-            if ping < 20 then
-                getgenv().Prediction = 0.157
-            elseif ping < 30 then
-                getgenv().Prediction = 0.155
-            elseif ping < 40 then
-                getgenv().Prediction = 0.145
-            elseif ping < 50 then
-                getgenv().Prediction = 0.15038
-            elseif ping < 60 then
-                getgenv().Prediction = 0.15038
-            elseif ping < 70 then
-                getgenv().Prediction = 0.136
-            elseif ping < 80 then
-                getgenv().Prediction = 0.133
-            elseif ping < 90 then
-                getgenv().Prediction = 0.130
-            elseif ping < 105 then
-                getgenv().Prediction = 0.127
-            elseif ping < 110 then
-                getgenv().Prediction = 0.124
-            elseif ping < 120 then
-                getgenv().Prediction = 0.120
-            elseif ping < 130 then
-                getgenv().Prediction = 0.116
-            elseif ping < 140 then
-                getgenv().Prediction = 0.113
-            elseif ping < 150 then
-                getgenv().Prediction = 0.110
-            elseif ping < 160 then
-                getgenv().Prediction = 0.18
-            elseif ping < 170 then
-                getgenv().Prediction = 0.15
-            elseif ping < 180 then
-                getgenv().Prediction = 0.12
-            elseif ping < 190 then
-                getgenv().Prediction = 0.10
-            elseif ping < 205 then
-                getgenv().Prediction = 1.0
-            elseif ping < 215 then
-                getgenv().Prediction = 1.2
-            elseif ping < 225 then
-                getgenv().Prediction = 1.4
-            end
-        end
+local function adjustPrediction(ping)
+    if ping < 20 then
+        getgenv().Prediction = 0.157
+    elseif ping < 30 then
+        getgenv().Prediction = 0.155
+    elseif ping < 40 then
+        getgenv().Prediction = 0.145
+    elseif ping < 50 then
+        getgenv().Prediction = 0.15038
+    elseif ping < 60 then
+        getgenv().Prediction = 0.15038
+    elseif ping < 70 then
+        getgenv().Prediction = 0.136
+    elseif ping < 80 then
+        getgenv().Prediction = 0.133
+    elseif ping < 90 then
+        getgenv().Prediction = 0.130
+    elseif ping < 105 then
+        getgenv().Prediction = 0.127
+    elseif ping < 110 then
+        getgenv().Prediction = 0.124
+    elseif ping < 120 then
+        getgenv().Prediction = 0.120
+    elseif ping < 130 then
+        getgenv().Prediction = 0.116
+    elseif ping < 140 then
+        getgenv().Prediction = 0.113
+    elseif ping < 150 then
+        getgenv().Prediction = 0.110
+    elseif ping < 160 then
+        getgenv().Prediction = 0.18
+    elseif ping < 170 then
+        getgenv().Prediction = 0.15
+    elseif ping < 180 then
+        getgenv().Prediction = 0.12
+    elseif ping < 190 then
+        getgenv().Prediction = 0.10
+    elseif ping < 205 then
+        getgenv().Prediction = 1.0
+    elseif ping < 215 then
+        getgenv().Prediction = 1.2
+    elseif ping < 225 then
+        getgenv().Prediction = 1.4
     end
 end
+
+local function getPing()
+    local stats = Stats.Network.ServerStatsItem["Data Ping"]
+    local ping = tonumber(stats:GetValueString():match("%d+"))
+    return ping
+end
+
+spawn(function()
+    while wait(1) do
+        local ping = getPing()
+        adjustPrediction(ping)
+    end
+end)
