@@ -9,6 +9,7 @@ getgenv().ShowFOV = false  -- FOV Circle off by default
 getgenv().FOVSize = 55
 getgenv().MaxDistance = 400
 getgenv().SilentAim = false  -- Silent Aim off by default
+getgenv().ESPNameColor = Color3.fromRGB(255, 255, 255)  -- Default ESP name color to white
 
 --// Variables (Service)
 local Players = game:GetService("Players")
@@ -107,15 +108,14 @@ local function toggleESP(state)
                         billboard.Name = "NameESP"
                         billboard.AlwaysOnTop = true
                         billboard.ExtentsOffset = Vector3.new(0, 3, 0)
-                        billboard.Size = UDim2.new(0, 200, 0, 50)
+                        billboard.Size = UDim2.new(0, 100, 0, 20)  -- Smaller size for name ESP
                         local nameLabel = Instance.new("TextLabel", billboard)
                         nameLabel.Text = player.Name
                         nameLabel.BackgroundTransparency = 1
-                        nameLabel.TextSize = 14
+                        nameLabel.TextSize = 8  -- Smaller text size for name ESP
                         nameLabel.Font = Enum.Font.SourceSans
-                        nameLabel.TextColor3 = Color3.new(1, 0, 0)
+                        nameLabel.TextColor3 = getgenv().ESPNameColor
                         nameLabel.Size = UDim2.new(1, 0, 1, 0)
-                        nameLabel.TextScaled = true  -- Ensure the text is centered
                     elseif not ShowPlayerNames and billboard then
                         billboard:Destroy()
                     end
@@ -347,7 +347,7 @@ local function getClosestPlayer()
 
             if notKO and notGrabbed and aimPart and distance <= getgenv().MaxDistance and isVisible(aimPart) then
                 local pos = Camera:WorldToViewportPoint(character.PrimaryPart.Position)
-                local distanceToCursor = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
+                local distanceToCursor = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).magnitude
 
                 if (getgenv().FOV and fov.Radius > distanceToCursor and distanceToCursor < shortestDistance) or (not getgenv().FOV and distanceToCursor < shortestDistance) then
                     closestPlayer = v
