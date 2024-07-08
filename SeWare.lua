@@ -10,6 +10,7 @@ getgenv().FOVSize = 55
 getgenv().MaxDistance = 400
 getgenv().SilentAim = false  -- Silent Aim off by default
 getgenv().ESPNameColor = Color3.fromRGB(255, 255, 255)  -- Default ESP name color to white
+getgenv().AutoTargetSwitch = false  -- Auto-target switching off by default
 
 --// Variables (Service)
 local Players = game:GetService("Players")
@@ -163,6 +164,13 @@ RS.RenderStepped:Connect(function()
     end
 end)
 
+--// Automatically Update ESP for New Players
+Players.PlayerAdded:Connect(function(player)
+    if ESPEnabled then
+        toggleESP(true)
+    end
+end)
+
 --// GUI Elements
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Enabled = false
@@ -170,7 +178,7 @@ ScreenGui.Parent = game.CoreGui
 
 local Frame = Instance.new("Frame")
 Frame.Position = UDim2.new(0.5, -100, 0.5, -75)  -- Smaller and more compact
-Frame.Size = UDim2.new(0, 200, 0, 250)  -- Adjusted size
+Frame.Size = UDim2.new(0, 200, 0, 300)  -- Adjusted size
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Darker background
 Frame.BackgroundTransparency = 0.3  -- Slightly less transparent
 Frame.BorderSizePixel = 0
@@ -191,8 +199,8 @@ Footer.Parent = Frame
 
 -- Real-Time Ping Display
 PingDisplay = Instance.new("TextLabel")
-PingDisplay.Size = UDim2.new(1, 0, 0.1, 0)
-PingDisplay.Position = UDim2.new(0, 0, 0.8, 0)
+PingDisplay.Size = UDim2.new(0.3, 0, 0.1, 0)  -- Smaller size
+PingDisplay.Position = UDim2.new(0.7, 0, 0, 0)  -- Top right corner
 PingDisplay.Text = "Ping: 0 ms"
 PingDisplay.BackgroundTransparency = 1
 PingDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -244,32 +252,37 @@ createCheckbox("Aimlock", 0.05, AimlockState, function(state)
     Notify("Aimlock " .. (AimlockState and "enabled" or "disabled") .. "!")
 end)
 
-createCheckbox("ESP", 0.2, ESPEnabled, function(state)
+createCheckbox("ESP", 0.15, ESPEnabled, function(state)
     ESPEnabled = state
     toggleESP(ESPEnabled)
     Notify("ESP " .. (ESPEnabled and "enabled" or "disabled") .. "!")
 end)
 
-createCheckbox("Rainbow Chams", 0.35, RainbowChams, function(state)
+createCheckbox("Rainbow Chams", 0.25, RainbowChams, function(state)
     RainbowChams = state
     Notify("Rainbow Chams " .. (RainbowChams and "enabled" or "disabled") .. "!")
     toggleESP(ESPEnabled) -- Refresh ESP to apply changes
 end)
 
-createCheckbox("Player Names", 0.5, ShowPlayerNames, function(state)
+createCheckbox("Player Names", 0.35, ShowPlayerNames, function(state)
     ShowPlayerNames = state
     Notify("Player Names " .. (ShowPlayerNames and "enabled" or "disabled") .. "!")
     toggleESP(ESPEnabled)  -- Refresh ESP to apply changes
 end)
 
-createCheckbox("FOV Circle", 0.65, getgenv().ShowFOV, function(state)
+createCheckbox("FOV Circle", 0.45, getgenv().ShowFOV, function(state)
     getgenv().ShowFOV = state
     Notify("FOV Circle " .. (getgenv().ShowFOV and "enabled" or "disabled") .. "!")
 end)
 
-createCheckbox("Silent Aim", 0.8, SilentAimEnabled, function(state)
+createCheckbox("Silent Aim", 0.55, SilentAimEnabled, function(state)
     SilentAimEnabled = state
     Notify("Silent Aim " .. (SilentAimEnabled and "enabled" or "disabled") .. "!")
+end)
+
+createCheckbox("Auto Target Switch", 0.65, getgenv().AutoTargetSwitch, function(state)
+    getgenv().AutoTargetSwitch = state
+    Notify("Auto Target Switch " .. (getgenv().AutoTargetSwitch and "enabled" or "disabled") .. "!")
 end)
 
 local function updateGUI()
@@ -279,6 +292,7 @@ local function updateGUI()
     Checkboxes["Player Names"].BackgroundColor3 = ShowPlayerNames and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
     Checkboxes["FOV Circle"].BackgroundColor3 = getgenv().ShowFOV and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
     Checkboxes["Silent Aim"].BackgroundColor3 = SilentAimEnabled and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
+    Checkboxes["Auto Target Switch"].BackgroundColor3 = getgenv().AutoTargetSwitch and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
 end
 
 --// Make Frame Draggable
@@ -359,7 +373,7 @@ local function getClosestPlayer()
 
             if notKO and notGrabbed and aimPart and distance <= getgenv().MaxDistance and isVisible(aimPart) then
                 local pos = Camera:WorldToViewportPoint(character.PrimaryPart.Position)
-                local distanceToCursor = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
+                local distanceToCursor = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).magnitude
 
                 if (getgenv().FOV and fov.Radius > distanceToCursor and distanceToCursor < shortestDistance) or (not getgenv().FOV and distanceToCursor < shortestDistance) then
                     closestPlayer = v
@@ -380,10 +394,11 @@ local function aimAt(target)
 
     local targetPosition = aimPart.Position
     local targetVelocity = aimPart.Velocity
+    local ping = getPing() / 1000 -- Convert ping to seconds
 
     -- Enhanced prediction calculation
     local travelTime = (targetPosition - Camera.CFrame.Position).Magnitude / 1000 -- Adjust this value to your game projectile speed
-    local predictedPosition = targetPosition + (targetVelocity * travelTime)
+    local predictedPosition = targetPosition + (targetVelocity * (travelTime + ping))
 
     -- Aim at the predicted position with smoothing
     local currentCFrame = Camera.CFrame
@@ -399,10 +414,11 @@ local function silentAim()
         if aimPart then
             local targetPosition = aimPart.Position
             local targetVelocity = aimPart.Velocity
+            local ping = getPing() / 1000 -- Convert ping to seconds
 
             -- Enhanced prediction calculation
             local travelTime = (targetPosition - Camera.CFrame.Position).Magnitude / 1000 -- Adjust this value to your game projectile speed
-            local predictedPosition = targetPosition + (targetVelocity * travelTime)
+            local predictedPosition = targetPosition + (targetVelocity * (travelTime + ping))
 
             -- Simulate hit
             -- This part depends on how bullets/projectiles are handled in the game
@@ -474,7 +490,9 @@ end)
 RS.RenderStepped:Connect(function()
     updateFOV()
     if AimlockState and Locked then
-        switchTarget()
+        if getgenv().AutoTargetSwitch then
+            switchTarget()
+        end
         if Victim and Victim.Character and Victim.Character:FindFirstChild(getgenv().AimPart) then
             if getDistanceFromPlayer(Victim.Character) <= getgenv().MaxDistance then
                 aimAt(Victim)
