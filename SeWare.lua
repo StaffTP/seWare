@@ -394,19 +394,15 @@ local function aimAt(target)
 
     local targetPosition = aimPart.Position
     local targetVelocity = aimPart.Velocity
-    local ping = getPing() / 1000 -- Convert ping to seconds
 
     -- Enhanced prediction calculation
     local travelTime = (targetPosition - Camera.CFrame.Position).Magnitude / 1000 -- Adjust this value to your game projectile speed
-    local predictedPosition = targetPosition + (targetVelocity * (travelTime + ping))
+    local predictedPosition = targetPosition + (targetVelocity * travelTime)
 
     -- Aim at the predicted position with smoothing
     local currentCFrame = Camera.CFrame
     local targetCFrame = CFrame.new(currentCFrame.Position, predictedPosition)
     Camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.2)  -- Adjust the 0.2 value for smoothing speed
-
-    -- Debugging prints
-    print("Aiming at: " .. tostring(predictedPosition))
 end
 
 --// Silent Aim Function
@@ -417,11 +413,10 @@ local function silentAim()
         if aimPart then
             local targetPosition = aimPart.Position
             local targetVelocity = aimPart.Velocity
-            local ping = getPing() / 1000 -- Convert ping to seconds
 
             -- Enhanced prediction calculation
             local travelTime = (targetPosition - Camera.CFrame.Position).Magnitude / 1000 -- Adjust this value to your game projectile speed
-            local predictedPosition = targetPosition + (targetVelocity * (travelTime + ping))
+            local predictedPosition = targetPosition + (targetVelocity * travelTime)
 
             -- Simulate hit
             -- This part depends on how bullets/projectiles are handled in the game
@@ -440,9 +435,6 @@ local function silentAim()
 
             -- FireServer method for simulating hits
             ReplicatedStorage.Events.HitPart:FireServer(unpack(args))
-
-            -- Debugging prints
-            print("Silent aiming at: " .. tostring(predictedPosition))
         end
     end
 end
