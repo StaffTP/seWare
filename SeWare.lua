@@ -1,3 +1,4 @@
+-- Global Variables
 getgenv().Prediction = 0.165
 getgenv().AimPart = "HumanoidRootPart"
 getgenv().Key = "E"
@@ -12,7 +13,7 @@ getgenv().SilentAim = false  -- Silent Aim off by default
 getgenv().ESPNameColor = Color3.fromRGB(255, 255, 255)  -- Default ESP name color to white
 getgenv().AutoTargetSwitch = false  -- Auto-target switching off by default
 
---// Variables (Service)
+-- Services
 local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
 local WS = game:GetService("Workspace")
@@ -22,7 +23,7 @@ local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Stats = game:GetService("Stats")
 
---// Variables (Regular)
+-- Variables
 local LP = Players.LocalPlayer
 local Mouse = LP:GetMouse()
 local Camera = WS.CurrentCamera
@@ -43,7 +44,7 @@ local SelectedDisableKey = getgenv().DisableKey:lower()
 local SelectedESPKey = getgenv().ESPKey:lower()
 local SelectedGUIKey = getgenv().GUIKey:lower()
 
---// Notification Function
+-- Notification Function
 local function Notify(text)
     SG:SetCore("SendNotification", {
         Title = "Enabled ✔ | [Se-Ware]",
@@ -52,7 +53,7 @@ local function Notify(text)
     })
 end
 
---// Check if Aimlock is Already Loaded
+-- Check if Aimlock is Already Loaded
 if getgenv().Loaded then
     Notify("Aimlock is already loaded!")
     return
@@ -60,7 +61,7 @@ end
 
 getgenv().Loaded = true
 
---// FOV Circle
+-- FOV Circle
 local fov = Drawing.new("Circle")
 fov.Filled = false
 fov.Transparency = 1
@@ -68,7 +69,7 @@ fov.Thickness = 1
 fov.Color = Color3.fromRGB(255, 255, 0)
 fov.NumSides = 1000
 
---// Utility Functions
+-- Utility Functions
 local function HSVtoRGB(h, s, v)
     local r, g, b
     local i = math.floor(h * 6)
@@ -94,7 +95,7 @@ local function getRainbowColor()
     return HSVtoRGB(tick() % 5 / 5, 1, 1)
 end
 
---// ESP Function with Rainbow Chams
+-- ESP Function with Rainbow Chams
 local function toggleESP(state)
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LP then
@@ -147,7 +148,7 @@ local function toggleESP(state)
     end
 end
 
---// Update Rainbow Chams
+-- Update Rainbow Chams
 RS.RenderStepped:Connect(function()
     if ESPEnabled and RainbowChams then
         for _, player in pairs(Players:GetPlayers()) do
@@ -164,151 +165,194 @@ RS.RenderStepped:Connect(function()
     end
 end)
 
---// Automatically Update ESP for New Players
+-- Automatically Update ESP for New Players
 Players.PlayerAdded:Connect(function(player)
     if ESPEnabled then
         toggleESP(true)
     end
 end)
 
---// GUI Elements
+-- GUI Elements
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Enabled = false
 ScreenGui.Parent = game.CoreGui
 
-local Frame = Instance.new("Frame")
-Frame.Position = UDim2.new(0.5, -100, 0.5, -75)  -- Smaller and more compact
-Frame.Size = UDim2.new(0, 200, 0, 300)  -- Adjusted size
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Darker background
-Frame.BackgroundTransparency = 0.3  -- Slightly less transparent
-Frame.BorderSizePixel = 0
-Frame.Parent = ScreenGui
+local MainFrame = Instance.new("Frame")
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 400, 0, 300)
+MainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+MainFrame.BackgroundTransparency = 0.2
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner", Frame)
-UICorner.CornerRadius = UDim.new(0, 10)
+local UICornerMain = Instance.new("UICorner", MainFrame)
+UICornerMain.CornerRadius = UDim.new(0, 10)
+
+local TabContainer = Instance.new("Frame")
+TabContainer.Position = UDim2.new(0, 0, 0, 0)
+TabContainer.Size = UDim2.new(1, 0, 0, 30)
+TabContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+TabContainer.BorderSizePixel = 0
+TabContainer.Parent = MainFrame
+
+local UICornerTabs = Instance.new("UICorner", TabContainer)
+UICornerTabs.CornerRadius = UDim.new(0, 10)
+
+local TabListLayout = Instance.new("UIListLayout")
+TabListLayout.FillDirection = Enum.FillDirection.Horizontal
+TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+TabListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+TabListLayout.Parent = TabContainer
 
 local Footer = Instance.new("TextLabel")
-Footer.Size = UDim2.new(1, 0, 0.1, 0)  -- Reduced size to avoid overlap
-Footer.Position = UDim2.new(0, 0, 0.9, 0)  -- Adjusted position
+Footer.Size = UDim2.new(1, 0, 0.1, 0)
+Footer.Position = UDim2.new(0, 0, 0.9, 0)
 Footer.Text = "[SE-WARE]"
 Footer.BackgroundTransparency = 1
 Footer.TextColor3 = getRainbowColor()
 Footer.TextScaled = true
 Footer.Font = Enum.Font.GothamBold
-Footer.Parent = Frame
+Footer.Parent = MainFrame
 
 -- Real-Time Ping Display
 PingDisplay = Instance.new("TextLabel")
-PingDisplay.Size = UDim2.new(0.3, 0, 0.1, 0)  -- Smaller size
-PingDisplay.Position = UDim2.new(0.7, 0, 0, 0)  -- Top right corner
+PingDisplay.Size = UDim2.new(0.3, 0, 0.1, 0)
+PingDisplay.Position = UDim2.new(0.7, 0, 0, 0)
 PingDisplay.Text = "Ping: 0 ms"
 PingDisplay.BackgroundTransparency = 1
 PingDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
 PingDisplay.TextScaled = true
 PingDisplay.Font = Enum.Font.Gotham
-PingDisplay.Parent = Frame
+PingDisplay.Parent = MainFrame
 
-local Checkboxes = {}
+local Tabs = {}
+local function createTab(name)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Size = UDim2.new(0, 100, 1, 0)
+    TabButton.Text = name
+    TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.Font = Enum.Font.Gotham
+    TabButton.TextScaled = true
+    TabButton.BorderSizePixel = 0
+    TabButton.Parent = TabContainer
 
-local function createCheckbox(text, position, defaultState, callback)
+    local UICornerTab = Instance.new("UICorner", TabButton)
+    UICornerTab.CornerRadius = UDim.new(0, 10)
+
+    local TabFrame = Instance.new("Frame")
+    TabFrame.Size = UDim2.new(1, 0, 0.9, -30)
+    TabFrame.Position = UDim2.new(0, 0, 0.1, 0)
+    TabFrame.BackgroundTransparency = 1
+    TabFrame.Visible = false
+    TabFrame.Parent = MainFrame
+
+    Tabs[name] = TabFrame
+
+    TabButton.MouseButton1Click:Connect(function()
+        for _, tab in pairs(Tabs) do
+            tab.Visible = false
+        end
+        TabFrame.Visible = true
+    end)
+end
+
+createTab("Combat")
+createTab("Visuals")
+createTab("Misc")
+createTab("Settings")
+
+Tabs["Combat"].Visible = true
+
+local function createCheckbox(tab, text, defaultState, callback)
     local CheckboxFrame = Instance.new("Frame")
-    CheckboxFrame.Size = UDim2.new(0.8, 0, 0.1, 0)  -- Smaller checkboxes
-    CheckboxFrame.Position = UDim2.new(0.1, 0, position, 0)
+    CheckboxFrame.Size = UDim2.new(0.9, 0, 0, 30)
     CheckboxFrame.BackgroundTransparency = 1
-    CheckboxFrame.Parent = Frame
+    CheckboxFrame.Parent = tab
 
     local Checkbox = Instance.new("TextButton")
-    Checkbox.Size = UDim2.new(0, 20, 0, 20)
-    Checkbox.Position = UDim2.new(0, 0, 0, 0)
-    Checkbox.BackgroundColor3 = defaultState and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)  -- Subtle colors
+    Checkbox.Size = UDim2.new(0, 30, 0, 30)
+    Checkbox.BackgroundColor3 = defaultState and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
     Checkbox.Text = ""
     Checkbox.Parent = CheckboxFrame
 
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -30, 1, 0)
-    Label.Position = UDim2.new(0, 30, 0, 0)
+    Label.Size = UDim2.new(1, -40, 1, 0)
+    Label.Position = UDim2.new(0, 40, 0, 0)
     Label.Text = text
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.TextScaled = true
     Label.Font = Enum.Font.Gotham
-    Label.TextXAlignment = Enum.TextXAlignment.Left  -- Align text to the left
+    Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = CheckboxFrame
 
-    local UICorner = Instance.new("UICorner", Checkbox)
-    UICorner.CornerRadius = UDim.new(0, 4)
+    local UICornerCheckbox = Instance.new("UICorner", Checkbox)
+    UICornerCheckbox.CornerRadius = UDim.new(0, 10)
 
     Checkbox.MouseButton1Click:Connect(function()
         defaultState = not defaultState
         Checkbox.BackgroundColor3 = defaultState and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
         callback(defaultState)
     end)
-
-    Checkboxes[text] = Checkbox
 end
 
-createCheckbox("Aimlock", 0.05, AimlockState, function(state)
+createCheckbox(Tabs["Combat"], "Enable Aimlock", AimlockState, function(state)
     AimlockState = state
     Notify("Aimlock " .. (AimlockState and "enabled" or "disabled") .. "!")
 end)
 
-createCheckbox("ESP", 0.15, ESPEnabled, function(state)
+createCheckbox(Tabs["Visuals"], "Enable ESP", ESPEnabled, function(state)
     ESPEnabled = state
     toggleESP(ESPEnabled)
     Notify("ESP " .. (ESPEnabled and "enabled" or "disabled") .. "!")
 end)
 
-createCheckbox("Rainbow Chams", 0.25, RainbowChams, function(state)
+createCheckbox(Tabs["Visuals"], "Rainbow Chams", RainbowChams, function(state)
     RainbowChams = state
     Notify("Rainbow Chams " .. (RainbowChams and "enabled" or "disabled") .. "!")
-    toggleESP(ESPEnabled) -- Refresh ESP to apply changes
+    toggleESP(ESPEnabled)
 end)
 
-createCheckbox("Player Names", 0.35, ShowPlayerNames, function(state)
+createCheckbox(Tabs["Visuals"], "Show Player Names", ShowPlayerNames, function(state)
     ShowPlayerNames = state
     Notify("Player Names " .. (ShowPlayerNames and "enabled" or "disabled") .. "!")
-    toggleESP(ESPEnabled)  -- Refresh ESP to apply changes
+    toggleESP(ESPEnabled)
 end)
 
-createCheckbox("FOV Circle", 0.45, getgenv().ShowFOV, function(state)
+createCheckbox(Tabs["Visuals"], "FOV Circle", getgenv().ShowFOV, function(state)
     getgenv().ShowFOV = state
     Notify("FOV Circle " .. (getgenv().ShowFOV and "enabled" or "disabled") .. "!")
 end)
 
-createCheckbox("Silent Aim", 0.55, SilentAimEnabled, function(state)
+createCheckbox(Tabs["Combat"], "Silent Aim", SilentAimEnabled, function(state)
     SilentAimEnabled = state
     Notify("Silent Aim " .. (SilentAimEnabled and "enabled" or "disabled") .. "!")
 end)
 
-createCheckbox("Auto Target Switch", 0.65, getgenv().AutoTargetSwitch, function(state)
+createCheckbox(Tabs["Combat"], "Auto Target Switch", getgenv().AutoTargetSwitch, function(state)
     getgenv().AutoTargetSwitch = state
     Notify("Auto Target Switch " .. (getgenv().AutoTargetSwitch and "enabled" or "disabled") .. "!")
 end)
 
 local function updateGUI()
-    Checkboxes["Aimlock"].BackgroundColor3 = AimlockState and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
-    Checkboxes["ESP"].BackgroundColor3 = ESPEnabled and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
-    Checkboxes["Rainbow Chams"].BackgroundColor3 = RainbowChams and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
-    Checkboxes["Player Names"].BackgroundColor3 = ShowPlayerNames and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
-    Checkboxes["FOV Circle"].BackgroundColor3 = getgenv().ShowFOV and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
-    Checkboxes["Silent Aim"].BackgroundColor3 = SilentAimEnabled and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
-    Checkboxes["Auto Target Switch"].BackgroundColor3 = getgenv().AutoTargetSwitch and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
+    -- Update the GUI based on the current state
 end
 
---// Make Frame Draggable
+-- Make Frame Draggable
 local dragging = false
 local dragInput, dragStart, startPos
 
 local function updateInput(input)
     local delta = input.Position - dragStart
-    Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
-Frame.InputBegan:Connect(function(input)
+MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
-        startPos = Frame.Position
+        startPos = MainFrame.Position
 
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
@@ -318,7 +362,7 @@ Frame.InputBegan:Connect(function(input)
     end
 end)
 
-Frame.InputChanged:Connect(function(input)
+MainFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         dragInput = input
     end
@@ -330,7 +374,7 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
---// Functions
+-- Functions
 local function updateFOV()
     if getgenv().FOV then
         if fov then
@@ -385,7 +429,7 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
---// Enhanced Aimlock with Improved Prediction and Smoothing
+-- Enhanced Aimlock with Improved Prediction and Smoothing
 local function aimAt(target)
     if not target or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then return end
 
@@ -405,7 +449,7 @@ local function aimAt(target)
     Camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.2)  -- Adjust the 0.2 value for smoothing speed
 end
 
---// Silent Aim Function
+-- Silent Aim Function
 local function silentAim()
     local target = getClosestPlayer()
     if target and target.Character and target.Character:FindFirstChild(getgenv().AimPart) then
@@ -449,7 +493,7 @@ local function switchTarget()
     end
 end
 
---// Key Down Event Handler
+-- Key Down Event Handler
 UIS.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
 
@@ -484,7 +528,7 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
---// Render Stepped Event Handler
+-- Render Stepped Event Handler
 RS.RenderStepped:Connect(function()
     updateFOV()
     if AimlockState and Locked then
@@ -512,7 +556,7 @@ RS.RenderStepped:Connect(function()
     PingDisplay.Text = "Ping: " .. tostring(getPing()) .. " ms"
 end)
 
---// Auto Prediction
+-- Auto Prediction
 local function adjustPrediction(ping)
     if ping < 20 then
         getgenv().Prediction = 0.157
