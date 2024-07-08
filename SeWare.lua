@@ -404,6 +404,9 @@ local function aimAt(target)
     local currentCFrame = Camera.CFrame
     local targetCFrame = CFrame.new(currentCFrame.Position, predictedPosition)
     Camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.2)  -- Adjust the 0.2 value for smoothing speed
+
+    -- Debugging prints
+    print("Aiming at: " .. tostring(predictedPosition))
 end
 
 --// Silent Aim Function
@@ -437,6 +440,9 @@ local function silentAim()
 
             -- FireServer method for simulating hits
             ReplicatedStorage.Events.HitPart:FireServer(unpack(args))
+
+            -- Debugging prints
+            print("Silent aiming at: " .. tostring(predictedPosition))
         end
     end
 end
