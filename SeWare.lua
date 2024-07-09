@@ -178,8 +178,8 @@ ScreenGui.Enabled = false
 ScreenGui.Parent = game.CoreGui
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-MainFrame.Size = UDim2.new(0, 400, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 300, 0, 300)
 MainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 MainFrame.BackgroundTransparency = 0.2
 MainFrame.BorderSizePixel = 0
@@ -202,6 +202,7 @@ local TabListLayout = Instance.new("UIListLayout")
 TabListLayout.FillDirection = Enum.FillDirection.Horizontal
 TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 TabListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+TabListLayout.Padding = UDim.new(0, 5)
 TabListLayout.Parent = TabContainer
 
 local Footer = Instance.new("TextLabel")
@@ -228,7 +229,7 @@ PingDisplay.Parent = MainFrame
 local Tabs = {}
 local function createTab(name)
     local TabButton = Instance.new("TextButton")
-    TabButton.Size = UDim2.new(0, 100, 1, 0)
+    TabButton.Size = UDim2.new(0, 75, 1, 0)
     TabButton.Text = name
     TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -259,26 +260,26 @@ end
 
 createTab("Combat")
 createTab("Visuals")
-createTab("Misc")
-createTab("Settings")
 
 Tabs["Combat"].Visible = true
 
 local function createCheckbox(tab, text, defaultState, callback)
     local CheckboxFrame = Instance.new("Frame")
-    CheckboxFrame.Size = UDim2.new(0.9, 0, 0, 30)
+    CheckboxFrame.Size = UDim2.new(1, -20, 0, 30)
+    CheckboxFrame.Position = UDim2.new(0, 10, 0, #tab:GetChildren() * 35)
     CheckboxFrame.BackgroundTransparency = 1
     CheckboxFrame.Parent = tab
 
     local Checkbox = Instance.new("TextButton")
-    Checkbox.Size = UDim2.new(0, 30, 0, 30)
+    Checkbox.Size = UDim2.new(0, 20, 0, 20)
+    Checkbox.Position = UDim2.new(0, 0, 0.5, -10)
     Checkbox.BackgroundColor3 = defaultState and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
     Checkbox.Text = ""
     Checkbox.Parent = CheckboxFrame
 
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -40, 1, 0)
-    Label.Position = UDim2.new(0, 40, 0, 0)
+    Label.Size = UDim2.new(1, -30, 1, 0)
+    Label.Position = UDim2.new(0, 30, 0, 0)
     Label.Text = text
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -286,9 +287,6 @@ local function createCheckbox(tab, text, defaultState, callback)
     Label.Font = Enum.Font.Gotham
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = CheckboxFrame
-
-    local UICornerCheckbox = Instance.new("UICorner", Checkbox)
-    UICornerCheckbox.CornerRadius = UDim.new(0, 10)
 
     Checkbox.MouseButton1Click:Connect(function()
         defaultState = not defaultState
